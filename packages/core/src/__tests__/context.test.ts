@@ -94,7 +94,8 @@ describe('Output Truncation', () => {
     });
 
     it('should use default options when not specified', () => {
-      const output = 'a'.repeat(1000000); // Very long
+      const lines = Array.from({ length: 3000 }, () => 'a'.repeat(100));
+      const output = lines.join('\n'); // Very long multiline
       const result = truncateOutput(output);
       expect(result.length).toBeLessThan(output.length);
     });

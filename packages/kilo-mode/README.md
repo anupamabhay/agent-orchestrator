@@ -1,54 +1,74 @@
 # Multi-Agent Orchestrator for Kilo Code
 
-Bring multi-agent orchestration to Kilo Code with custom modes and skills.
+Bring multi-agent orchestration to Kilo Code with custom modes.
 
 ## Installation
 
-### Option 1: Copy to Kilo Config
+### Option 1: Project-Level (Recommended)
+
+Copy the combined modes file to your project root as `.kilocodemodes`:
 
 ```bash
-# Copy modes
-cp -r modes/* ~/.kilo/modes/
-
-# Copy skills
-cp -r skills/* ~/.kilo/skills/
+# From the agent-orchestrator repo
+cp packages/kilo-mode/kilocodemodes.json /path/to/your/project/.kilocodemodes
 ```
 
-### Option 2: Project-Level
+Kilo Code auto-detects `.kilocodemodes` in the project root.
 
-```bash
-# In your project root
-mkdir -p .kilo/modes .kilo/skills
-cp -r modes/* .kilo/modes/
-cp -r skills/* .kilo/skills/
+### Option 2: Global Install
+
+Append mode definitions to the global Kilo Code config:
+
+**JSON format:** Copy `kilocodemodes.json` content to `~/.kilocode/custom_modes.json`
+
+**YAML format:** Add to `~/.kilocode/custom_modes.yaml`:
+
+```yaml
+customModes:
+  - slug: orchestrator
+    name: Orchestrator
+    roleDefinition: "..."
+    groups: [read, edit, command, mcp]
+    customInstructions: "..."
+  # ... (see kilocodemodes.json for full definitions)
 ```
+
+After install, reload VS Code: `Cmd+Shift+P` / `Ctrl+Shift+P` → "Developer: Reload Window"
 
 ## Available Modes
 
-| Mode | Description |
-|------|-------------|
-| `orchestrator` | Main coordinator for multi-agent workflows |
-| `scanner` | Fast codebase exploration |
-| `advisor` | Architecture review and debugging (read-only) |
-| `builder` | Deep autonomous coding |
+| Mode | Slug | Tool Groups | Description |
+|------|------|-------------|-------------|
+| **Orchestrator** | `orchestrator` | read, edit, command, mcp | Main coordinator for multi-agent workflows |
+| **Scanner** | `scanner` | read | Fast codebase exploration (read-only) |
+| **Advisor** | `advisor` | read | Architecture review and debugging (read-only) |
+| **Builder** | `builder` | read, edit, command | Deep autonomous coding |
 
 ## Usage
 
-### Switch to Orchestrator Mode
+### Switch Modes
 
-In Kilo Code, switch to Orchestrator mode to enable multi-agent coordination:
+1. Open the Kilo Code panel in VS Code
+2. Click the mode selector dropdown
+3. Choose a mode (e.g., "Orchestrator")
 
-1. Open command palette
-2. Select "Kilo: Switch Mode"
-3. Choose "Orchestrator"
+Or use Command Palette: `Cmd+Shift+P` → "Kilo: Switch Mode"
 
-### Use the Skill
+### Agent Delegation
 
-The orchestrator skill activates automatically when you use keywords:
+In Orchestrator mode, mention agents with `@`:
 
-- `ultrawork` or `ulw` - Maximum intensity mode
-- `parallel` or `||` - Force parallel execution
-- `think` - Extended reasoning
+```
+@scanner find all test files
+@researcher look up jest best practices
+@advisor review the test architecture
+```
+
+### Keyword Triggers
+
+- `ultrawork` / `ulw` — Maximum intensity mode
+- `parallel` / `||` — Force parallel execution
+- `think` — Extended reasoning
 
 ### Example
 
@@ -62,19 +82,17 @@ The orchestrator will:
 3. Delegate implementation to @builder
 4. Verify completion
 
+## Files
+
+| File | Purpose |
+|------|---------|
+| `kilocodemodes.json` | Combined modes file — copy as `.kilocodemodes` to project root |
+| `modes/*.json` | Individual mode definitions (reference only) |
+| `skills/orchestrator/SKILL.md` | Orchestrator skill definition |
+
 ## Customization
 
-Edit the JSON files in `modes/` to customize:
-- Role definitions
-- Custom instructions
-- Permission groups
-
-## Agent Delegation
-
-In orchestrator mode, mention agents with @:
-
-```
-@scanner find all test files
-@researcher look up jest best practices
-@advisor review the test architecture
-```
+Edit `kilocodemodes.json` (or your `.kilocodemodes` file) to customize:
+- `roleDefinition` — The agent's system prompt
+- `customInstructions` — Detailed behavioral instructions
+- `groups` — Tool permission groups (`read`, `edit`, `browser`, `command`, `mcp`, `modes`)

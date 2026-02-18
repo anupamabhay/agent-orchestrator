@@ -32,9 +32,11 @@ npm install -g @orchestrator/opencode-plugin
 ### For Kilo Code (VSCode)
 
 ```bash
-# Copy modes to Kilo config
-cp -r packages/kilo-mode/modes/* ~/.kilo/modes/
-cp -r packages/kilo-mode/skills/* ~/.kilo/skills/
+# Copy the combined modes file to your project root
+cp packages/kilo-mode/kilocodemodes.json /path/to/your/project/.kilocodemodes
+
+# Or install globally
+cp packages/kilo-mode/kilocodemodes.json ~/.kilocode/custom_modes.json
 ```
 
 ## Agents
@@ -331,7 +333,7 @@ parallel implement feature A and feature B
 
 ### Kilo Code
 
-Edit mode JSON files in `~/.kilo/modes/` or `.kilo/modes/`.
+Edit `kilocodemodes.json` and copy as `.kilocodemodes` to your project root. See [`packages/kilo-mode/README.md`](packages/kilo-mode/README.md) for details.
 
 ## Project Structure
 
@@ -344,9 +346,7 @@ packages/
 │   └── src/context/      # Token management
 │
 ├── opencode-plugin/      # OpenCode plugin
-│   ├── src/hooks/        # Lifecycle hooks
-│   ├── src/commands/     # Slash commands
-│   ├── src/tools/        # Custom tools
+│   ├── src/              # Plugin source (event hooks)
 │   └── agents/           # Markdown agent definitions
 │
 └── kilo-mode/            # Kilo Code integration

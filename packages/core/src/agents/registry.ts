@@ -3,7 +3,7 @@
  */
 
 import type { AgentDefinition, AgentId, AgentRegistry, OrchestratorConfig } from '../types/index.js';
-import { DEFAULT_AGENTS, getAllDefaultAgents } from './definitions.js';
+import { getAllDefaultAgents } from './definitions.js';
 
 export class AgentRegistryImpl implements AgentRegistry {
   agents: Map<AgentId, AgentDefinition>;

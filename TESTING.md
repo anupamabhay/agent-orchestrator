@@ -280,16 +280,46 @@ If you installed the plugin (not just agents), test these:
    - Search for "Kilo Code"
    - Install the extension
 
-2. **Copy modes to Kilo config**
+2. **Install custom modes** (choose one method)
+
+   **Option A: Project-level (recommended for testing)**
    ```bash
-   # Create Kilo config directories
-   mkdir -p ~/.kilo/modes
+   # From the agent-orchestrator repo root:
+   # Copy the combined modes file as .kilocodemodes in your target project
+   cp packages/kilo-mode/kilocodemodes.json /path/to/your/project/.kilocodemodes
+   ```
+   The `.kilocodemodes` file in a project root is auto-detected by Kilo Code.
+
+   **Option B: Global (applies to all projects)**
    
-   # Copy custom modes
-   cp packages/kilo-mode/modes/*.json ~/.kilo/modes/
+   Append the mode definitions to `~/.kilocode/custom_modes.yaml`:
+   ```yaml
+   customModes:
+     - slug: orchestrator
+       name: Orchestrator
+       roleDefinition: "You are the Orchestrator, a multi-agent coordinator..."
+       groups: [read, edit, command, mcp]
+       customInstructions: "..."
+     - slug: scanner
+       name: Scanner
+       roleDefinition: "You are the Scanner..."
+       groups: [read]
+       customInstructions: "..."
+     - slug: advisor
+       name: Advisor
+       roleDefinition: "You are the Advisor..."
+       groups: [read]
+       customInstructions: "..."
+     - slug: builder
+       name: Builder
+       roleDefinition: "You are the Builder..."
+       groups: [read, edit, command]
+       customInstructions: "..."
    ```
 
-3. **Restart VS Code**
+   Or use the JSON format — copy `kilocodemodes.json` content into `~/.kilocode/custom_modes.json`.
+
+3. **Restart VS Code** (or reload window: `Cmd+Shift+P` → "Developer: Reload Window")
 
 ### Setup
 
@@ -314,9 +344,9 @@ If you installed the plugin (not just agents), test these:
 #### Test 1: Mode Loading
 
 **Steps:**
-1. Open a project in VS Code
-2. Open Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
-3. Type "Kilo: Select Mode" or use the mode selector in Kilo UI
+1. Open a project in VS Code (if using project-level install, open the project with `.kilocodemodes`)
+2. Open the Kilo Code panel
+3. Click the mode selector dropdown (or use Command Palette → "Kilo: Switch Mode")
 4. Check for custom modes
 
 **Expected:**
@@ -335,19 +365,19 @@ If you installed the plugin (not just agents), test these:
 - Uses configured model (e.g., claude-opus-4-5)
 - Explores codebase systematically
 - Provides structured analysis
-- May delegate to specialized modes internally
+- Has access to read, edit, command, and mcp tool groups
 
 #### Test 3: Scanner Mode
 
 **Steps:**
 1. Select "Scanner" mode
-2. Send message: `Find all React components`
+2. Send message: `Find all TypeScript files`
 
 **Expected Behavior:**
 - Fast response (uses lightweight model like claude-haiku)
 - Uses read-only tools (glob, grep, read)
 - Returns file list without modifications
-- No write/edit tools available
+- No edit/command tools available (only `read` group)
 
 #### Test 4: Advisor Mode
 
@@ -359,7 +389,7 @@ If you installed the plugin (not just agents), test these:
 - Read-only analysis (no file modifications)
 - Architecture recommendations
 - Security considerations mentioned
-- Best practices suggestions
+- Only `read` group tools available
 
 #### Test 5: Builder Mode
 
@@ -368,7 +398,7 @@ If you installed the plugin (not just agents), test these:
 2. Send message: `Implement a new API endpoint for user profiles`
 
 **Expected Behavior:**
-- Full tool access (read, write, edit, bash)
+- Full tool access (read, edit, command groups)
 - Thorough codebase exploration first
 - Pattern matching with existing code
 - Complete implementation
@@ -376,17 +406,23 @@ If you installed the plugin (not just agents), test these:
 
 ### Mode Configuration Verification
 
-Each mode JSON file in `~/.kilo/modes/` should have:
+The combined modes file (`kilocodemodes.json` / `.kilocodemodes`) must follow this schema:
 
 ```json
 {
-  "slug": "orchestrator",
-  "name": "Orchestrator",
-  "roleDefinition": "You are the Orchestrator agent...",
-  "groups": ["read", "edit", "browser", "command", "mcp"],
-  "customInstructions": "..."
+  "customModes": [
+    {
+      "slug": "orchestrator",
+      "name": "Orchestrator",
+      "roleDefinition": "You are the Orchestrator agent...",
+      "groups": ["read", "edit", "command", "mcp"],
+      "customInstructions": "..."
+    }
+  ]
 }
 ```
+
+**Valid `groups` values:** `read`, `edit`, `browser`, `command`, `mcp`, `modes`
 
 Verify modes load correctly by checking Kilo's mode selector dropdown.
 
@@ -610,22 +646,28 @@ Your system prompt here...
 **Symptoms:** Custom modes not in Kilo's mode selector
 
 **Checklist:**
-- [ ] Modes copied to `~/.kilo/modes/` directory
-- [ ] JSON syntax valid:
+- [ ] **Project-level:** `.kilocodemodes` file exists in the project root (the directory you opened in VS Code)
+- [ ] **Global:** `~/.kilocode/custom_modes.yaml` (or `.json`) exists and contains mode definitions
+- [ ] JSON/YAML syntax valid:
   ```bash
-  # Validate JSON
-  cat ~/.kilo/modes/orchestrator.json | python -m json.tool
-  ```
-- [ ] VS Code restarted after adding modes
-- [ ] Kilo extension is up to date
+  # Validate JSON (.kilocodemodes or custom_modes.json)
+  python -m json.tool < .kilocodemodes
 
-**Mode JSON structure:**
+  # Or use Node.js
+  node -e "console.log(JSON.parse(require('fs').readFileSync('.kilocodemodes','utf8')))"
+  ```
+- [ ] File follows the `{ "customModes": [...] }` schema (modes must be inside the `customModes` array)
+- [ ] VS Code reloaded after adding/changing modes
+- [ ] Kilo Code extension is up to date
+- [ ] `groups` values are valid: `read`, `edit`, `browser`, `command`, `mcp`, `modes`
+
+**Correct mode structure (inside `customModes` array):**
 ```json
 {
   "slug": "orchestrator",
   "name": "Orchestrator",
   "roleDefinition": "...",
-  "groups": ["read", "edit", "command"],
+  "groups": ["read", "edit", "command", "mcp"],
   "customInstructions": "..."
 }
 ```
@@ -665,9 +707,10 @@ Use this checklist for final verification:
 - [ ] Custom system prompts are used
 
 ### Kilo Code Modes
-- [ ] All custom modes appear in mode selector
+- [ ] `.kilocodemodes` file placed in project root (or global `~/.kilocode/custom_modes.yaml`)
+- [ ] All 4 custom modes appear in mode selector (Orchestrator, Scanner, Advisor, Builder)
 - [ ] Mode switching works correctly
-- [ ] Each mode uses correct tool groups
+- [ ] Each mode uses correct tool groups (e.g., Scanner is read-only)
 - [ ] Custom instructions are applied
 - [ ] Model selection per mode works
 

@@ -23,7 +23,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@orchestrator/core": "workspace:*"
+    "@orchestrator/core": "*"
   },
   "devDependencies": {
     "@opencode-ai/plugin": ">=1.0.0",

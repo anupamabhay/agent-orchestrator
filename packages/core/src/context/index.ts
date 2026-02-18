@@ -216,7 +216,7 @@ export class AgentsMdInjector {
    * Get AGENTS.md content for injection, with deduplication
    */
   getAgentsContext(
-    filePath: string,
+    _filePath: string,
     agentsMdContents: Map<string, string>
   ): string[] {
     if (!this.config.deduplicateAgentsMd) {

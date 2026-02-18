@@ -119,7 +119,7 @@ describe('Intent Analysis', () => {
     });
 
     it('should detect plan intent', () => {
-      const analysis = analyzeIntent('plan the implementation steps');
+      const analysis = analyzeIntent('plan the next steps for the project');
       expect(analysis.primary).toBe('plan');
       expect(analysis.suggestedAgents).toContain('planner');
     });

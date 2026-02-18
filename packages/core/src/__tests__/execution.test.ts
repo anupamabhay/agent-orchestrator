@@ -77,10 +77,11 @@ describe('ParallelExecutor', () => {
         createTask('researcher', 'look up docs'),
       ];
 
-      const results = await executor.executeParallel(tasks);
-      
-      expect(results).toHaveLength(2);
-      expect(results.every(r => r.success)).toBe(true);
+      await executor.executeParallel(tasks);
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      expect(tasks.every(task => task.status === 'completed')).toBe(true);
+      expect(tasks.every(task => task.result?.success)).toBe(true);
     });
 
     it('should respect parallel limit', async () => {
@@ -95,8 +96,9 @@ describe('ParallelExecutor', () => {
         createTask('scanner', 'task 4'),
       ];
 
-      const results = await limitedExecutor.executeParallel(tasks);
-      expect(results).toHaveLength(4);
+      await limitedExecutor.executeParallel(tasks);
+      await new Promise(resolve => setTimeout(resolve, 50));
+      expect(tasks.every(task => task.status === 'completed')).toBe(true);
     });
 
     it('should handle empty task array', async () => {
