@@ -1,0 +1,83 @@
+// Enterprise Gateway Configuration Example
+// For organizations with private LLM gateways, Azure OpenAI, or AWS Bedrock
+//
+// Best for:
+// - Enterprise compliance requirements
+// - Private/air-gapped deployments
+// - Custom model hosting
+// - Centralized API key management
+//
+// File: ~/.config/opencode/opencode.json (global)
+// Or: ./opencode.json (project-specific)
+
+{
+  "$schema": "https://opencode.ai/config.json",
+  
+  // Default to enterprise gateway
+  "model": "gateway/gpt-4-turbo",
+  
+  "provider": {
+    // Generic OpenAI-compatible gateway
+    "gateway": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://llm-gateway.corp.example.com/v1",
+        "apiKey": "{env:CORP_LLM_API_KEY}",
+        "defaultHeaders": {
+          // Custom headers for your gateway
+          "X-Team-ID": "engineering",
+          "X-Cost-Center": "ai-tools"
+        }
+      }
+    },
+    
+    // Azure OpenAI
+    // Requires Azure OpenAI resource with deployed models
+    "azure": {
+      "npm": "@ai-sdk/azure",
+      "options": {
+        // Your Azure OpenAI endpoint
+        "resourceName": "my-azure-openai-resource",
+        // API key or use Azure AD auth
+        "apiKey": "{env:AZURE_OPENAI_API_KEY}",
+        // API version
+        "apiVersion": "2024-02-01"
+      }
+    },
+    
+    // AWS Bedrock
+    // Requires AWS credentials with Bedrock access
+    "bedrock": {
+      "npm": "@ai-sdk/amazon-bedrock",
+      "options": {
+        "region": "us-east-1"
+        // Authentication via:
+        // - AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY env vars
+        // - AWS_PROFILE env var
+        // - IAM role (when running on AWS)
+      }
+    }
+  },
+  
+  // Plugin config - enterprise models
+  "@orchestrator/opencode-plugin": {
+    "agents": {
+      "orchestrator": {
+        // Azure OpenAI deployment
+        "model": "azure/gpt-4-turbo-deployment"
+      },
+      "builder": {
+        // Azure OpenAI deployment
+        "model": "azure/gpt-4-turbo-deployment"
+      },
+      "researcher": {
+        // AWS Bedrock Claude
+        "model": "bedrock/anthropic.claude-3-sonnet-20240229-v1:0"
+      },
+      "scanner": {
+        // Corporate gateway
+        "model": "gateway/gpt-3.5-turbo"
+      }
+    }
+  }
+}

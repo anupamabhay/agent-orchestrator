@@ -1,0 +1,89 @@
+// Local Models Configuration Example
+// Run models locally with Ollama, LM Studio, or llama.cpp
+//
+// Best for:
+// - Privacy-sensitive work
+// - Offline development
+// - Cost savings (no API fees)
+// - Experimentation with open models
+//
+// Prerequisites:
+// - Ollama: https://ollama.ai (recommended)
+// - Or LM Studio: https://lmstudio.ai
+//
+// File: ~/.config/opencode/opencode.json (global)
+// Or: ./opencode.json (project-specific)
+
+{
+  "$schema": "https://opencode.ai/config.json",
+  
+  // Default to local model
+  "model": "ollama/llama3:70b",
+  
+  "provider": {
+    // Ollama (recommended for local models)
+    // Install: curl -fsSL https://ollama.ai/install.sh | sh
+    // Pull model: ollama pull llama3:70b
+    "ollama": {
+      "npm": "@ai-sdk/ollama",
+      "options": {
+        // Default Ollama endpoint
+        "baseURL": "http://localhost:11434"
+      }
+    },
+    
+    // LM Studio (OpenAI-compatible API)
+    // Start server in LM Studio, then configure here
+    "lmstudio": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://localhost:1234/v1",
+        "apiKey": "lm-studio" // LM Studio doesn't require a real key
+      }
+    },
+    
+    // llama.cpp server
+    // Start: ./server -m model.gguf -c 4096 --host 0.0.0.0 --port 8080
+    "llamacpp": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://localhost:8080/v1",
+        "apiKey": "not-needed"
+      }
+    },
+    
+    // Keep cloud providers as fallback
+    "anthropic": {
+      "name": "Anthropic",
+      "options": {
+        "apiKey": "{env:ANTHROPIC_API_KEY}"
+      }
+    }
+  },
+  
+  // Plugin config - local for most, cloud for complex tasks
+  "@orchestrator/opencode-plugin": {
+    "agents": {
+      "orchestrator": {
+        // Cloud for orchestration (needs best reasoning)
+        "model": "anthropic/claude-opus-4-5"
+      },
+      "builder": {
+        // Local Llama for coding
+        "model": "ollama/codellama:34b"
+      },
+      "worker": {
+        // Local for parallel tasks
+        "model": "ollama/llama3:70b"
+      },
+      "scanner": {
+        // Local for fast scanning
+        "model": "ollama/llama3:8b"
+      },
+      "researcher": {
+        // Cloud for research (needs web access)
+        "model": "google/gemini-3-flash"
+      }
+    }
+  }
+}

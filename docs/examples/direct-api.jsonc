@@ -1,0 +1,101 @@
+// Direct API Configuration Example
+// Connect directly to provider APIs (Anthropic, OpenAI, Google)
+//
+// Best for:
+// - Production use with dedicated API keys
+// - Lower latency (no proxy)
+// - Full control over provider settings
+//
+// File: ~/.config/opencode/opencode.json (global)
+// Or: ./opencode.json (project-specific)
+
+{
+  "$schema": "https://opencode.ai/config.json",
+  
+  // Default model
+  "model": "anthropic/claude-opus-4-5",
+  
+  "provider": {
+    // Anthropic (Claude models)
+    // Get API key: https://console.anthropic.com/
+    "anthropic": {
+      "name": "Anthropic",
+      "options": {
+        "apiKey": "{env:ANTHROPIC_API_KEY}"
+        // Optional: custom base URL for proxy/enterprise
+        // "baseURL": "https://api.anthropic.com"
+      }
+    },
+    
+    // OpenAI (GPT models)
+    // Get API key: https://platform.openai.com/api-keys
+    "openai": {
+      "name": "OpenAI",
+      "options": {
+        "apiKey": "{env:OPENAI_API_KEY}"
+        // Optional: organization ID
+        // "organization": "org-..."
+      }
+    },
+    
+    // Google AI (Gemini models)
+    // Get API key: https://aistudio.google.com/apikey
+    "google": {
+      "name": "Google AI",
+      "options": {
+        "apiKey": "{env:GOOGLE_API_KEY}"
+      }
+    },
+    
+    // Moonshot (Kimi models)
+    // Get API key: https://platform.moonshot.cn/
+    "moonshot": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://api.moonshot.cn/v1",
+        "apiKey": "{env:MOONSHOT_API_KEY}"
+      }
+    }
+  },
+  
+  // Plugin config - use best model from each provider
+  "@orchestrator/opencode-plugin": {
+    "agents": {
+      "orchestrator": {
+        // Anthropic Claude Opus for orchestration
+        "model": "anthropic/claude-opus-4-5",
+        "thinking": { "budgetTokens": 32000 }
+      },
+      "planner": {
+        // Anthropic Claude Opus for planning
+        "model": "anthropic/claude-opus-4-5",
+        "thinking": { "budgetTokens": 16000 }
+      },
+      "advisor": {
+        // Anthropic Claude Opus for advice
+        "model": "anthropic/claude-opus-4-5",
+        "thinking": { "budgetTokens": 16000 }
+      },
+      "builder": {
+        // OpenAI Codex for coding
+        "model": "openai/gpt-5.3-codex"
+      },
+      "worker": {
+        // OpenAI Codex for parallel tasks
+        "model": "openai/gpt-5.3-codex"
+      },
+      "researcher": {
+        // Google Gemini Flash for research
+        "model": "google/gemini-3-flash"
+      },
+      "scanner": {
+        // Anthropic Haiku for fast scanning
+        "model": "anthropic/claude-haiku-4-5"
+      },
+      "designer": {
+        // Google Gemini Pro for design
+        "model": "google/gemini-3-pro"
+      }
+    }
+  }
+}

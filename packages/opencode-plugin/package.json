@@ -1,0 +1,44 @@
+{
+  "name": "@orchestrator/opencode-plugin",
+  "version": "1.0.0",
+  "description": "Multi-Agent Orchestrator plugin for OpenCode",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "agents"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@orchestrator/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.1",
+    "vitest": "^1.2.0"
+  },
+  "peerDependencies": {
+    "opencode-ai": ">=1.0.0"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "multi-agent",
+    "orchestrator",
+    "ai",
+    "parallel"
+  ],
+  "license": "MIT"
+}

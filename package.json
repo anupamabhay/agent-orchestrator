@@ -1,0 +1,35 @@
+{
+  "name": "multi-agent-orchestrator",
+  "version": "1.0.0",
+  "description": "Multi-agent orchestration system for OpenCode and VSCode/Kilo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:core": "npm run build -w @orchestrator/core",
+    "build:opencode": "npm run build -w @orchestrator/opencode-plugin",
+    "dev": "npm run dev --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint packages/*/src/**/*.ts",
+    "clean": "rimraf packages/*/dist"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "tsup": "^8.0.1",
+    "rimraf": "^5.0.5",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourname/multi-agent-orchestrator"
+  },
+  "license": "MIT"
+}

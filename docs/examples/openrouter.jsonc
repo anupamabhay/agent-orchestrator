@@ -1,0 +1,61 @@
+// OpenRouter Configuration Example
+// OpenRouter provides access to 100+ models with a single API key
+// Sign up at: https://openrouter.ai
+//
+// File: ~/.config/opencode/opencode.json (global)
+// Or: ./opencode.json (project-specific)
+
+{
+  "$schema": "https://opencode.ai/config.json",
+  
+  // Use OpenRouter as the default provider
+  "model": "openrouter/anthropic/claude-3.5-sonnet",
+  
+  "provider": {
+    "openrouter": {
+      "name": "OpenRouter",
+      "options": {
+        // API key - get yours at https://openrouter.ai/keys
+        // Can use env var: "{env:OPENROUTER_API_KEY}"
+        "apiKey": "sk-or-v1-your-key-here",
+        
+        // Base URL (don't change unless using a proxy)
+        "baseURL": "https://openrouter.ai/api/v1",
+        
+        // Required headers for OpenRouter
+        "defaultHeaders": {
+          // Your app/site URL (for rankings)
+          "HTTP-Referer": "https://github.com/your-org/your-project",
+          // App name shown in OpenRouter dashboard
+          "X-Title": "Agent Orchestrator"
+        }
+      }
+    }
+  },
+  
+  // Plugin config - all models via OpenRouter
+  "@orchestrator/opencode-plugin": {
+    "agents": {
+      "orchestrator": {
+        // Claude Opus via OpenRouter
+        "model": "openrouter/anthropic/claude-3-opus"
+      },
+      "builder": {
+        // GPT-4 Turbo via OpenRouter
+        "model": "openrouter/openai/gpt-4-turbo"
+      },
+      "researcher": {
+        // Gemini Flash via OpenRouter
+        "model": "openrouter/google/gemini-flash-1.5"
+      },
+      "scanner": {
+        // Claude Haiku via OpenRouter (fast + cheap)
+        "model": "openrouter/anthropic/claude-3-haiku"
+      },
+      "designer": {
+        // Gemini Pro via OpenRouter
+        "model": "openrouter/google/gemini-pro-1.5"
+      }
+    }
+  }
+}

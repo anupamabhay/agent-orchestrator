@@ -1,0 +1,67 @@
+// Google Vertex AI Configuration Example
+// For enterprise/GCP users with Vertex AI access
+//
+// Prerequisites:
+// 1. GCP project with Vertex AI API enabled
+// 2. Authentication via: gcloud auth application-default login
+// 3. Or service account JSON: GOOGLE_APPLICATION_CREDENTIALS env var
+//
+// File: ~/.config/opencode/opencode.json (global)
+// Or: ./opencode.json (project-specific)
+
+{
+  "$schema": "https://opencode.ai/config.json",
+  
+  // Use Vertex as the default provider
+  "model": "vertex/gemini-1.5-pro",
+  
+  "provider": {
+    "vertex": {
+      // Use the official Vertex AI SDK
+      "npm": "@ai-sdk/google-vertex",
+      "options": {
+        // Your GCP project ID
+        "project": "my-gcp-project-id",
+        
+        // Vertex AI region
+        // Options: us-central1, us-east4, europe-west1, asia-northeast1, etc.
+        "location": "us-central1"
+        
+        // Authentication is handled by:
+        // 1. GOOGLE_APPLICATION_CREDENTIALS env var (service account)
+        // 2. gcloud auth application-default login (user credentials)
+        // 3. GCP metadata server (when running on GCP)
+      }
+    },
+    
+    // You can combine with other providers
+    "anthropic": {
+      "name": "Anthropic",
+      "options": {
+        "apiKey": "{env:ANTHROPIC_API_KEY}"
+      }
+    }
+  },
+  
+  // Plugin config - mix Vertex and Anthropic
+  "@orchestrator/opencode-plugin": {
+    "agents": {
+      "orchestrator": {
+        // Use Anthropic for orchestration
+        "model": "anthropic/claude-opus-4-5"
+      },
+      "researcher": {
+        // Use Vertex Gemini for research
+        "model": "vertex/gemini-1.5-flash"
+      },
+      "designer": {
+        // Use Vertex Gemini Pro for design
+        "model": "vertex/gemini-1.5-pro"
+      },
+      "scanner": {
+        // Use Vertex for fast scanning
+        "model": "vertex/gemini-1.5-flash"
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "@orchestrator/core",
+  "version": "1.0.0",
+  "description": "Core orchestration logic - shared across OpenCode plugin and Kilo mode",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./agents": {
+      "import": "./dist/agents/index.js",
+      "types": "./dist/agents/index.d.ts"
+    },
+    "./planning": {
+      "import": "./dist/planning/index.js",
+      "types": "./dist/planning/index.d.ts"
+    },
+    "./execution": {
+      "import": "./dist/execution/index.js",
+      "types": "./dist/execution/index.d.ts"
+    },
+    "./context": {
+      "import": "./dist/context/index.js",
+      "types": "./dist/context/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.1",
+    "vitest": "^1.2.0"
+  },
+  "license": "MIT"
+}

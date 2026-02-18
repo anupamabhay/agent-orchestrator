@@ -1,0 +1,20 @@
+{
+  "name": "@orchestrator/kilo-mode",
+  "version": "1.0.0",
+  "description": "Multi-Agent Orchestrator modes and skills for Kilo Code",
+  "files": [
+    "modes",
+    "skills"
+  ],
+  "scripts": {
+    "install:local": "cp -r modes skills ~/.kilo/"
+  },
+  "keywords": [
+    "kilo",
+    "kilo-code",
+    "multi-agent",
+    "orchestrator",
+    "ai"
+  ],
+  "license": "MIT"
+}
