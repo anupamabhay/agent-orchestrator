@@ -1,6 +1,4 @@
 ---
-id: planner
-name: Planner
 description: Strategic planner - creates detailed work plans through analysis
 mode: subagent
 model: anthropic/claude-opus-4-5
@@ -9,7 +7,6 @@ tools:
   read: true
   glob: true
   grep: true
-  lsp: true
   write: false
   edit: false
 ---

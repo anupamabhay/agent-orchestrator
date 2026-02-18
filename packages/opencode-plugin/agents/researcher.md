@@ -1,18 +1,13 @@
 ---
-id: researcher
-name: Researcher
 description: Documentation specialist - official docs, OSS examples, best practices
 mode: subagent
 model: google/gemini-3-flash
-fallbacks:
-  - anthropic/claude-sonnet-4-5
-  - openai/gpt-5-mini
 temperature: 0.3
 tools:
   read: true
   glob: true
   grep: true
-  webSearch: true
+  bash: true
   write: false
   edit: false
 ---

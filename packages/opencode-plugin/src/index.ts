@@ -1,145 +1,141 @@
 /**
  * Multi-Agent Orchestrator Plugin for OpenCode
- * 
- * Brings parallel agent execution, specialized agents, and workflow automation
- * to OpenCode CLI/TUI.
+ *
+ * Implements the OpenCode plugin API:
+ * https://opencode.ai/docs/plugins
+ *
+ * Plugin functions receive ({ project, client, $, directory, worktree })
+ * and return event hook objects.
+ *
+ * Agents are NOT registered through the plugin — they are defined as
+ * markdown files in ~/.config/opencode/agents/ or .opencode/agents/.
+ * See the agents/ directory in this package for the markdown files.
  */
 
-import {
-  createAgentRegistry,
-  createParallelExecutor,
-  createContextTracker,
-  VERSION,
-  NAME,
-  type Plugin,
-  type OrchestratorConfig,
-  type AgentDefinition,
-} from '@orchestrator/core';
-
-import { createHooks } from './hooks/index.js';
-import { createCommands } from './commands/index.js';
-import { createTools } from './tools/index.js';
-import { loadAgentMarkdownFiles } from './loaders/agents.js';
-import { loadConfig, DEFAULT_CONFIG } from './config.js';
+import { estimateTokens, truncateOutput } from '@orchestrator/core';
 
 // ============================================================================
-// Plugin State
+// Types (matching OpenCode plugin API)
 // ============================================================================
 
-let config: OrchestratorConfig = DEFAULT_CONFIG;
-let agentRegistry: ReturnType<typeof createAgentRegistry> | null = null;
-let executor: ReturnType<typeof createParallelExecutor> | null = null;
-let contextTracker: ReturnType<typeof createContextTracker> | null = null;
-
-// ============================================================================
-// Plugin Definition
-// ============================================================================
-
-const plugin: Plugin = {
-  name: NAME,
-  version: VERSION,
-
-  /**
-   * Called when the plugin is loaded
-   */
-  async onLoad(userConfig) {
-    console.log(`[${NAME}] Loading v${VERSION}...`);
-
-    // Merge user config with defaults
-    config = loadConfig(userConfig);
-
-    // Initialize agent registry
-    agentRegistry = createAgentRegistry(config);
-    console.log(`[${NAME}] Registered ${agentRegistry.getAll().length} agents`);
-
-    // Load markdown agent definitions from disk
-    const markdownAgents = await loadAgentMarkdownFiles();
-    for (const agent of markdownAgents) {
-      // Type assertion needed since markdown agents may have different shape
-      if (isValidAgentDefinition(agent)) {
-        agentRegistry.agents.set(agent.id, agent);
-      }
-    }
-
-    // Context tracker (will be configured per session)
-    contextTracker = createContextTracker(200000, config.context);
-
-    console.log(`[${NAME}] Plugin loaded successfully`);
-  },
-
-  /**
-   * Called when the plugin is unloaded
-   */
-  async onUnload() {
-    console.log(`[${NAME}] Unloading...`);
-    
-    // Cancel any background tasks
-    if (executor) {
-      await executor.cancelAll();
-    }
-
-    agentRegistry = null;
-    executor = null;
-    contextTracker = null;
-
-    console.log(`[${NAME}] Plugin unloaded`);
-  },
-
-  /**
-   * Agent definitions to register
-   */
-  get agents() {
-    return agentRegistry?.getAll() ?? [];
-  },
-
-  /**
-   * Hooks for lifecycle events
-   */
-  get hooks() {
-    return createHooks(config);
-  },
-
-  /**
-   * Slash commands
-   */
-  get commands() {
-    return createCommands(config, () => agentRegistry);
-  },
-
-  /**
-   * Custom tools
-   */
-  get tools() {
-    return createTools(config, () => executor);
-  },
-};
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-function isValidAgentDefinition(obj: unknown): obj is AgentDefinition {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'id' in obj &&
-    'name' in obj &&
-    'prompt' in obj
-  );
+interface PluginContext {
+  project: unknown;
+  client: {
+    app: {
+      log: (opts: { body: { service: string; level: string; message: string; extra?: Record<string, unknown> } }) => Promise<void>;
+    };
+  };
+  $: unknown;
+  directory: string;
+  worktree: string;
 }
 
+type PluginFunction = (ctx: PluginContext) => Promise<Record<string, unknown>>;
+
 // ============================================================================
-// Exports
+// Main Plugin — Event Hooks
 // ============================================================================
 
-export default plugin;
+/**
+ * OrchestratorPlugin — hooks into OpenCode lifecycle events to provide:
+ * - Output truncation for large tool results
+ * - Compaction context injection for agent continuity
+ * - Session error logging
+ */
+export const OrchestratorPlugin: PluginFunction = async ({ client }) => {
+  await client.app.log({
+    body: {
+      service: 'orchestrator-plugin',
+      level: 'info',
+      message: 'Multi-Agent Orchestrator plugin loaded',
+    },
+  });
 
-export {
-  config,
-  agentRegistry,
-  executor,
-  contextTracker,
+  return {
+    /**
+     * Truncate large tool outputs to prevent context overflow.
+     * Fires after every tool execution.
+     */
+    'tool.execute.after': async (
+      input: { tool: string },
+      output: { result: unknown }
+    ) => {
+      const truncateTools = new Set([
+        'read', 'grep', 'glob', 'bash',
+        'lsp_find_references', 'lsp_diagnostics', 'ast_grep_search',
+      ]);
+
+      if (!truncateTools.has(input.tool)) {
+        return;
+      }
+
+      const result = output.result;
+      if (typeof result !== 'string') {
+        return;
+      }
+
+      const MAX_TOKENS = 50_000;
+      const tokens = estimateTokens(result);
+
+      if (tokens <= MAX_TOKENS) {
+        return;
+      }
+
+      output.result = truncateOutput(result, {
+        maxTokens: MAX_TOKENS,
+        preserveStart: 3000,
+        preserveEnd: 1000,
+      });
+    },
+
+    /**
+     * Inject orchestrator context into compaction summaries.
+     * Ensures subagent delegation patterns persist across compaction.
+     */
+    'experimental.session.compacting': async (
+      _input: unknown,
+      output: { context: string[] }
+    ) => {
+      output.context.push(`## Multi-Agent Orchestrator Context
+
+When resuming after compaction, remember:
+
+### Available Subagents
+Invoke specialized agents using @mentions:
+- @scanner — Fast codebase exploration (grep, glob, quick lookups)
+- @researcher — Documentation, OSS examples, best practices
+- @advisor — Architecture review, debugging, code review (read-only)
+- @designer — UI/UX, styling, responsive design
+- @worker — Parallel task execution, fast implementation
+- @builder — Deep autonomous coding, end-to-end features
+- @planner — Strategic planning, task decomposition
+
+### Parallel Execution
+Launch independent tasks simultaneously using @mentions.
+
+### Keyword Triggers
+- \`ultrawork\` / \`ulw\` — Maximum intensity parallel execution
+- \`parallel\` / \`||\` — Force parallel execution
+- \`think\` / \`ultrathink\` — Extended reasoning before action
+
+### Task Completion
+Maintain todos. Do not stop until all tasks are marked complete.`);
+    },
+
+    /**
+     * React to session events for logging/diagnostics.
+     */
+    event: async ({ event }: { event: { type: string } }) => {
+      if (event.type === 'session.error') {
+        await client.app.log({
+          body: {
+            service: 'orchestrator-plugin',
+            level: 'error',
+            message: `Session error detected`,
+            extra: { event },
+          },
+        });
+      }
+    },
+  };
 };
-
-// Re-export core types for convenience
-export * from '@orchestrator/core';

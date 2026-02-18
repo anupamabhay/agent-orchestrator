@@ -26,11 +26,9 @@
     "@orchestrator/core": "workspace:*"
   },
   "devDependencies": {
+    "@opencode-ai/plugin": ">=1.0.0",
     "tsup": "^8.0.1",
     "vitest": "^1.2.0"
-  },
-  "peerDependencies": {
-    "opencode-ai": ">=1.0.0"
   },
   "keywords": [
     "opencode",

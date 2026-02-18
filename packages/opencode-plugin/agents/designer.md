@@ -1,6 +1,4 @@
 ---
-id: designer
-name: Designer
 description: UI/UX specialist - styling, responsive design, visual polish
 mode: subagent
 model: google/gemini-3-pro

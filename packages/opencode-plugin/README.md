@@ -1,120 +1,106 @@
-# Multi-Agent Orchestrator Plugin for OpenCode
+# Multi-Agent Orchestrator for OpenCode
 
-Bring multi-agent orchestration to OpenCode with parallel execution, specialized agents, and workflow automation.
+Bring multi-agent orchestration to OpenCode with 8 specialized agents and workflow automation hooks.
+
+## Architecture
+
+This package provides two independent components:
+
+1. **Agent markdown files** (`agents/*.md`) — Custom agents loaded by OpenCode
+2. **Plugin file** (`src/index.ts`) — Event hooks for output truncation, compaction context, and error logging
+
+You can use agents without the plugin. They are independent.
 
 ## Installation
 
+### Agents Only (No Build Required)
+
 ```bash
-npm install -g @orchestrator/opencode-plugin
+# Copy agent files to OpenCode agents directory
+mkdir -p ~/.config/opencode/agents
+cp agents/*.md ~/.config/opencode/agents/
+
+# Or for project-level:
+mkdir -p .opencode/agents
+cp agents/*.md .opencode/agents/
 ```
 
-Add to your OpenCode config:
+### Agents + Plugin
 
-```jsonc
-// ~/.config/opencode/opencode.json
-{
-  "plugin": ["@orchestrator/opencode-plugin"]
-}
+```bash
+# Build the plugin
+npm install && npm run build
+
+# Copy agents
+mkdir -p ~/.config/opencode/agents
+cp agents/*.md ~/.config/opencode/agents/
+
+# Copy built plugin
+mkdir -p ~/.config/opencode/plugins
+cp dist/index.js ~/.config/opencode/plugins/orchestrator-plugin.js
 ```
-
-## Features
-
-- **8 Specialized Agents** - Orchestrator, Scanner, Researcher, Advisor, Builder, Worker, Designer, Planner
-- **Parallel Execution** - Launch multiple agents simultaneously
-- **Background Tasks** - Fire-and-forget async execution
-- **Todo Enforcement** - Don't stop until work is complete
-- **Keyword Triggers** - `ultrawork`, `parallel`, `think`
-- **Smart Context** - Truncation, deduplication, AGENTS.md injection
 
 ## Usage
 
 ### Agent Delegation
 
-```
-@scanner find all test files
-@researcher look up testing best practices
-@advisor review test architecture
-```
-
-### Ultrawork Mode
+Invoke subagents with `@mentions` in OpenCode:
 
 ```
-ulw implement complete user authentication
+@scanner find all TypeScript files
+@researcher look up JWT best practices
+@advisor review the authentication module
+@builder implement user registration
 ```
 
-### Slash Commands
+Switch to the orchestrator as your primary agent with **Tab**.
 
-- `/orchestrate <task>` - Analyze and plan task delegation
-- `/parallel <task>` - Force parallel execution
-- `/agents` - List available agents
-- `/ultrawork <task>` - Activate ultrawork mode
+### Keyword Triggers
 
-### Background Tasks
+Include these in your prompts for special modes:
 
-```javascript
-// Launch background task
-task({ agent: "scanner", prompt: "Find all API files", runInBackground: true })
-
-// Check results later
-background_output({ task_id: "bg_123" })
-```
+- `ultrawork` / `ulw` — Maximum intensity parallel execution
+- `parallel` / `||` — Force parallel execution
+- `think` / `ultrathink` — Extended reasoning before action
 
 ## Configuration
 
+Override agent models in your `opencode.json`:
+
 ```jsonc
 {
-  "plugin": ["@orchestrator/opencode-plugin"],
-  "@orchestrator/opencode-plugin": {
-    "defaultAgent": "orchestrator",
-    "parallelLimit": 5,
-    "backgroundEnabled": true,
-    
-    "agents": {
-      "builder": {
-        "model": "openai/gpt-5.3-codex"
-      },
-      "advisor": {
-        "model": "anthropic/claude-opus-4-5"
-      }
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "scanner": {
+      "model": "openai/gpt-5-mini"
     },
-    
-    "hooks": {
-      "todoEnforcer": true,
-      "keywordDetector": true,
-      "outputTruncator": true,
-      "contextInjector": true
-    },
-    
-    "context": {
-      "maxToolOutputTokens": 50000,
-      "headroomPercentage": 50,
-      "aggressiveTruncation": false
+    "builder": {
+      "model": "anthropic/claude-sonnet-4-5"
     }
   }
 }
 ```
 
-## Hooks
+## Agents
+
+| Agent | Model | Mode | Role |
+|-------|-------|------|------|
+| orchestrator | claude-opus-4-5 | primary | Main coordinator |
+| scanner | claude-haiku-4-5 | subagent | Fast codebase exploration (read-only) |
+| researcher | gemini-3-flash | subagent | Documentation, best practices (read-only) |
+| advisor | claude-opus-4-5 | subagent | Architecture review (read-only) |
+| builder | gpt-5.3-codex | subagent | Deep autonomous coding |
+| worker | gpt-5.3-codex | subagent | Parallel task execution |
+| designer | gemini-3-pro | subagent | UI/UX implementation |
+| planner | claude-opus-4-5 | subagent | Strategic planning (read-only) |
+
+## Plugin Hooks
 
 | Hook | Description |
 |------|-------------|
-| `keyword-detector` | Detects ultrawork/parallel/think keywords |
-| `todo-enforcer` | Prevents stopping with incomplete todos |
-| `output-truncator` | Smart truncation of large outputs |
-| `context-injector` | Auto-injects AGENTS.md files |
-
-## Agents
-
-| Agent | Model | Role |
-|-------|-------|------|
-| orchestrator | claude-opus-4-5 | Main coordinator |
-| scanner | claude-haiku-4-5 | Fast codebase exploration |
-| researcher | claude-sonnet-4-5 | Documentation lookup |
-| advisor | claude-opus-4-5 | Architecture review |
-| builder | gpt-5.3-codex | Deep autonomous coding |
-| worker | gpt-5.3-codex | Parallel task execution |
-| designer | gemini-3-pro | UI/UX implementation |
-| planner | claude-opus-4-5 | Strategic planning |
+| `tool.execute.after` | Truncates large tool outputs (>50k tokens) |
+| `experimental.session.compacting` | Injects agent context into compaction summaries |
+| `event` | Logs session errors for diagnostics |
 
 ## License
 

@@ -1,11 +1,9 @@
 ---
-id: worker
-name: Worker
 description: Parallel task executor - fast implementation of well-defined tasks
 mode: subagent
 model: openai/gpt-5.3-codex
 temperature: 0.2
-maxSteps: 20
+steps: 20
 tools:
   read: true
   write: true
@@ -13,7 +11,6 @@ tools:
   bash: true
   glob: true
   grep: true
-  lsp: true
 ---
 
 You are the **Worker**, a fast parallel task executor.

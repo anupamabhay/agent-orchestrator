@@ -1,11 +1,9 @@
 ---
-id: scanner
-name: Scanner
 description: Blazing-fast codebase exploration - grep, glob, quick lookups
 mode: subagent
 model: anthropic/claude-haiku-4-5
 temperature: 0.1
-maxSteps: 10
+steps: 10
 tools:
   read: true
   glob: true

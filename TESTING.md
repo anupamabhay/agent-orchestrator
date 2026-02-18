@@ -61,6 +61,13 @@ The core package includes tests for:
 
 ## Manual Testing: OpenCode Plugin
 
+### Architecture Overview
+
+This project installs into OpenCode as **two separate components**:
+
+1. **Agents** — Markdown files placed in OpenCode's agents directory. These define specialized subagents (scanner, researcher, advisor, etc.) that can be invoked via `@mentions`.
+2. **Plugin** — A JS/TS file placed in OpenCode's plugins directory. This provides event hooks (output truncation, compaction context injection, error logging).
+
 ### Prerequisites
 
 1. **Install OpenCode**
@@ -73,65 +80,15 @@ The core package includes tests for:
    
    # Or using Homebrew (macOS/Linux)
    brew install anomalyco/tap/opencode
-   ```
-
-2. **Build the plugin**
-   ```bash
-   cd agent-orchestrator
-   npm install
-   npm run build
-   ```
-
-3. **Copy agents to OpenCode config**
-   ```bash
-   # Create agents directory
-   mkdir -p ~/.config/opencode/agents
    
-   # Copy agent markdown files
-   cp packages/opencode-plugin/agents/*.md ~/.config/opencode/agents/
-   ```
-
-4. **Copy plugin to OpenCode plugins directory**
-   ```bash
-   # Create plugins directory
-   mkdir -p ~/.config/opencode/plugins
-   
-   # Copy built plugin
-   cp -r packages/opencode-plugin/dist/* ~/.config/opencode/plugins/
-   ```
-
-### Setup
-
-1. **Add plugin to OpenCode config**
-
-   Edit `~/.config/opencode/opencode.json`:
-   ```jsonc
-   {
-     "$schema": "https://opencode.ai/config.json",
-     
-     // Add the plugin
-     "plugin": ["@orchestrator/opencode-plugin"],
-     
-     // Set default agent to our orchestrator
-     "default_agent": "orchestrator",
-     
-     // Agent configurations
-     "agent": {
-       "orchestrator": {
-         "description": "Main coordinator - analyzes tasks, delegates to specialists",
-         "mode": "primary",
-         "model": "anthropic/claude-opus-4-5"
-       }
-     }
-   }
+   # Or on Windows (Scoop)
+   scoop install opencode
    ```
 
 2. **Configure at least one provider**
 
-   Start OpenCode and use `/connect`:
+   Start OpenCode in any directory:
    ```bash
-   # Start OpenCode in your project directory
-   cd your-project
    opencode
    ```
    
@@ -140,59 +97,135 @@ The core package includes tests for:
    /connect
    ```
    
-   Select your provider (e.g., Anthropic, OpenAI, OpenRouter) and follow the prompts to enter your API key.
+   Select your provider (e.g., Anthropic, OpenAI, OpenRouter) and follow the prompts to enter your API key. Keys are stored in `~/.local/share/opencode/auth.json`.
 
 3. **Verify models are available**
    ```
    /models
    ```
-   
-   You should see your configured models listed.
+
+### Install: Agents Only (Simplest)
+
+This installs the 8 specialized agents without the plugin. No build step needed.
+
+```bash
+# Clone the repo
+git clone https://github.com/anupamabhay/agent-orchestrator.git
+cd agent-orchestrator
+
+# Copy agent markdown files to OpenCode agents directory
+# (OpenCode auto-discovers .md files here)
+mkdir -p ~/.config/opencode/agents
+cp packages/opencode-plugin/agents/*.md ~/.config/opencode/agents/
+```
+
+**What this gives you:**
+- 8 agents available via `@mention` (scanner, researcher, advisor, builder, worker, designer, planner)
+- Orchestrator as a primary agent (switch with Tab)
+- Each agent has its own model, temperature, tool permissions, and system prompt
+
+### Install: Agents + Plugin (Full)
+
+This also installs the plugin for output truncation and compaction hooks.
+
+```bash
+# Clone and build
+git clone https://github.com/anupamabhay/agent-orchestrator.git
+cd agent-orchestrator
+npm install
+npm run build
+
+# Copy agents (same as above)
+mkdir -p ~/.config/opencode/agents
+cp packages/opencode-plugin/agents/*.md ~/.config/opencode/agents/
+
+# Copy the built plugin file
+mkdir -p ~/.config/opencode/plugins
+cp packages/opencode-plugin/dist/index.js ~/.config/opencode/plugins/orchestrator-plugin.js
+```
+
+**Note:** The plugin JS file must export named functions matching the OpenCode plugin API. Our plugin exports `OrchestratorPlugin` which hooks into `tool.execute.after` and `experimental.session.compacting`.
+
+### Install: Project-Level (Per-Project)
+
+Instead of global install, you can install per-project:
+
+```bash
+# In your project root
+mkdir -p .opencode/agents .opencode/plugins
+
+# Copy agents
+cp /path/to/agent-orchestrator/packages/opencode-plugin/agents/*.md .opencode/agents/
+
+# Copy plugin (if built)
+cp /path/to/agent-orchestrator/packages/opencode-plugin/dist/index.js .opencode/plugins/orchestrator-plugin.js
+```
 
 ### Test Cases
 
 #### Test 1: Agent Loading
 
 **Steps:**
-1. Start OpenCode: `opencode`
-2. Press **Tab** to cycle through agents
+1. Start OpenCode in a project: `opencode`
+2. Press **Tab** to cycle through primary agents
 
 **Expected:**
-- Custom agents appear in the agent list
-- Orchestrator agent is available as primary
-- Scanner, Researcher, Advisor appear as subagents
+- "Orchestrator" appears as a primary agent (alongside built-in Build and Plan)
+- Custom system prompt is used when you send a message
 
-#### Test 2: Agent Invocation with @mention
+#### Test 2: Subagent Invocation with @mention
 
 **Command (inside OpenCode TUI):**
 ```
-@explore find all TypeScript files in src/
+@scanner find all TypeScript files in src/
 ```
 
 **Expected Behavior:**
-- Explore subagent is invoked
-- Fast response with file list
-- Read-only - no file modifications
+- Scanner subagent is invoked (not the built-in @explore)
+- Uses `anthropic/claude-haiku-4-5` model (fast, cheap)
+- Read-only — write/edit/bash tools are disabled
+- Returns concise file list
 
-#### Test 3: Custom Agent Prompt
+#### Test 3: Multiple Subagents
 
-**Steps:**
-1. Switch to orchestrator agent (Tab key)
-2. Enter: `analyze this codebase structure`
+**Command:**
+```
+@researcher look up JWT authentication best practices
+```
+
+Then in a new message:
+```
+@advisor review the authentication implementation in this project
+```
 
 **Expected Behavior:**
-- Orchestrator uses its custom system prompt
-- May delegate to @explore for codebase scanning
-- Provides structured analysis
+- Researcher uses `google/gemini-3-flash` model
+- Advisor uses `anthropic/claude-opus-4-5` model
+- Both are read-only (no file modifications)
+- Each follows its specialized system prompt
 
-#### Test 4: Model Override
+#### Test 4: Builder Agent (Full Access)
 
-**Setup:** Edit `~/.config/opencode/opencode.json`:
+**Command:**
+```
+@builder add input validation to the user registration endpoint
+```
+
+**Expected Behavior:**
+- Builder has full tool access (read, write, edit, bash)
+- Explores codebase before writing code
+- Matches existing patterns
+- Uses `openai/gpt-5.3-codex` model
+
+#### Test 5: Model Override via Config
+
+**Setup:** Add to `~/.config/opencode/opencode.json` or `./opencode.json`:
 ```jsonc
 {
+  "$schema": "https://opencode.ai/config.json",
   "agent": {
     "scanner": {
-      "model": "anthropic/claude-haiku-4-5"
+      "model": "openai/gpt-5-mini"
     }
   }
 }
@@ -203,41 +236,37 @@ The core package includes tests for:
 @scanner find all test files
 ```
 
-**Expected:** Scanner uses claude-haiku-4-5 instead of default model
+**Expected:** Scanner now uses `gpt-5-mini` instead of `claude-haiku-4-5`
 
-#### Test 5: Subagent Task Tool
-
-**Command:**
-```
-Research JWT authentication best practices and find relevant files in this project
-```
-
-**Expected Behavior:**
-- Primary agent may invoke subagents via Task tool
-- Multiple parallel investigations possible
-- Results synthesized in response
-
-#### Test 6: Plan Mode
+#### Test 6: Plan Mode (Built-in)
 
 **Steps:**
-1. Press **Tab** to switch to Plan mode
+1. Press **Tab** to switch to Plan mode (built-in OpenCode agent)
 2. Enter: `implement user authentication`
 
 **Expected Behavior:**
 - Plan mode is read-only (no file changes)
 - Provides implementation plan without modifying code
-- Can analyze and suggest but not execute
+- This is OpenCode's built-in Plan agent, not our plugin
 
-### Verifying Plugin Events
+#### Test 7: Subagent Navigation
 
-The plugin can hook into OpenCode events. Test these:
+**Steps:**
+1. Send a message that invokes a subagent: `@scanner find all API routes`
+2. After scanner responds, use `<Leader>+Right` to navigate to the child session
+3. Use `<Leader>+Left` to return to the parent session
 
-| Event | How to Test | Expected |
-|-------|-------------|----------|
-| `session.created` | Start new session | Plugin hook fires |
-| `tool.execute.before` | Use any tool | Hook can modify/block |
-| `tool.execute.after` | Tool completes | Hook receives output |
-| `session.idle` | Agent finishes | Hook can trigger notification |
+**Expected:** Seamless navigation between parent and child sessions
+
+### Verifying Plugin Hooks
+
+If you installed the plugin (not just agents), test these:
+
+| Hook | How to Test | Expected |
+|------|-------------|----------|
+| `tool.execute.after` | Run a grep that returns 1000+ lines | Output is truncated with `[... N lines omitted ...]` |
+| `experimental.session.compacting` | Fill context until auto-compaction triggers | Compaction summary includes "Multi-Agent Orchestrator Context" with subagent list |
+| `event` (session.error) | Trigger a session error | Error is logged via `client.app.log` |
 
 ---
 
